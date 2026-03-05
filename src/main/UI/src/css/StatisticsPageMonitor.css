@@ -1,0 +1,169 @@
+
+
+:root {
+  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --bg-color: #f4f7fa;
+  --card-bg-color: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --shadow-color: rgba(149, 157, 165, 0.1);
+
+  /* Màu cho biểu đồ */
+  --chart-success: #22c55e;
+  --chart-progress: #3b82f6;
+  --chart-cancelled: #a855f7;
+  --chart-failed: #ef4444;
+  --chart-pending: #f59e0b;
+}
+
+.monitor-statistics-container {
+  background-color: var(--bg-color);
+  font-family: var(--font-family-sans);
+  color: var(--text-primary);
+  height: 100%;
+  padding: 12px; /* Giảm padding */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Giảm khoảng cách */
+}
+
+
+
+.monitor-stat-section {
+  background-color: var(--card-bg-color);
+  border-radius: 8px; /* Giảm bo góc */
+  padding: 16px; /* Giảm padding */
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.monitor-stat-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.monitor-stat-title {
+  font-size: 16px; /* Giảm font */
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+
+
+.monitor-today-chart-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Giảm khoảng cách */
+}
+
+.monitor-chart-container {
+  position: relative;
+  width: 100px; /* Giảm kích thước */
+  height: 100px; /* Giảm kích thước */
+  flex-shrink: 0;
+}
+
+.monitor-chart-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.monitor-total-number {
+  font-size: 24px; /* Giảm font */
+  font-weight: 700;
+  line-height: 1;
+}
+
+.monitor-total-label {
+  font-size: 12px; /* Giảm font */
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.monitor-legend-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px; /* Giảm khoảng cách */
+  font-size: 13px; /* Giảm font */
+}
+
+.monitor-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Giảm khoảng cách */
+}
+
+.monitor-legend-color-box {
+  width: 10px; /* Giảm kích thước */
+  height: 10px; /* Giảm kích thước */
+  border-radius: 3px;
+}
+.monitor-legend-color-box.success {
+  background-color: var(--chart-success);
+}
+.monitor-legend-color-box.progress {
+  background-color: var(--chart-progress);
+}
+.monitor-legend-color-box.cancelled {
+  background-color: var(--chart-cancelled);
+}
+.monitor-legend-color-box.failed {
+  background-color: var(--chart-failed);
+}
+.monitor-legend-color-box.pending {
+  background-color: var(--chart-pending);
+}
+
+
+
+.monitor-completion-rate-wrapper {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  text-align: center;
+  gap: 16px; /* Giảm khoảng cách */
+}
+
+.monitor-rate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.monitor-rate-title {
+  font-size: 13px; /* Giảm font */
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.monitor-small-chart {
+  position: relative;
+  width: 70px; /* Giảm kích thước */
+  height: 70px; /* Giảm kích thước */
+}
+
+.monitor-chart-center-text.small .monitor-total-number {
+  font-size: 18px; /* Giảm font */
+}
+
+.monitor-rate-legend {
+  margin-top: 8px;
+  font-size: 12px; /* Giảm font */
+  color: var(--text-secondary);
+  text-align: left;
+}
+.monitor-rate-legend p {
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+}

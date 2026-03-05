@@ -1,0 +1,133 @@
+/* Reset chung */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden; /* ✅ Không cho xuất hiện thanh cuộn ngang toàn trang */
+  font-family: Arial, sans-serif;
+}
+
+/* Container chính */
+.content.task-full-width {
+  width: 100%;
+  padding: 20px;
+}
+
+/* Ô tìm kiếm */
+.search-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.search-container input[type="text"],
+.search-container input[type="datetime-local"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.search-container label {
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.search-container .filter,
+.search-container .clear-filter {
+  background-color: #ff2c2c;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.search-container .filter:hover,
+.search-container .clear-filter:hover {
+  background-color: #cc0000;
+}
+
+/* Bảng dữ liệu */
+.task-table-container {
+  width: 100%;
+  overflow-x: auto; /* ✅ Scroll ngang chỉ ở bảng */
+  margin-bottom: 15px;
+}
+
+.task-table-container table {
+  min-width: 1450px; /* ✅ Giữ bảng rộng để không bóp chữ */
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.task-table-container th {
+  background-color: burlywood;
+  color: black;
+  padding: 6px;
+  text-align: center;
+  font-size: 14px;
+  white-space: nowrap; /* ✅ Ngăn header bị xuống dòng */
+}
+
+.task-table-container td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Gạch trắng ngăn cách cột */
+.task-table-container th,
+.task-table-container td {
+  border-right: 1px solid #fff;
+}
+
+.task-table-container th:last-child,
+.task-table-container td:last-child {
+  border-right: none;
+}
+
+.task-table-container tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.task-table-container tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Nút dưới bảng */
+.lowbut {
+  display: flex;
+  flex-wrap: wrap; /* ✅ Khi màn nhỏ nút sẽ xuống dòng */
+  gap: 15px;
+}
+
+.lowbut .left-buttons,
+.lowbut .right-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.lowbut .left-buttons button,
+.lowbut .right-buttons button {
+  background-color: gray;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.lowbut .left-buttons button:hover,
+.lowbut .right-buttons button:hover {
+  background-color: red;
+}

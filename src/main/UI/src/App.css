@@ -1,0 +1,311 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  overflow: hidden;
+}
+
+.taskbar button {
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f0f2f5;
+}
+
+.content-area {
+  position: relative;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.map-background-layer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+/* Trong file App.css */
+
+.manager-overlay,
+.page-overlay {
+  position: fixed;
+
+  /* QUAN TRỌNG: Đẩy lớp phủ xuống dưới thanh header (giả sử cao 56px) */
+  top: 56px;
+  left: 0;
+  width: 100%;
+
+  /* Chiều cao bằng phần còn lại của màn hình */
+  height: calc(100% - 56px);
+
+  /* Z-index cao để đảm bảo nó luôn ở trên cùng */
+  z-index: 9999;
+
+  /* Các thuộc tính khác */
+  background-color: #f0f2f5;
+  overflow-y: auto;
+
+  /* Bỏ padding ở lớp phủ để component con tự quản lý */
+  padding: 0;
+}
+
+/* SỬA LỖI 2: Tăng z-index của menu admin để nó luôn nằm trên thanh taskbar 
+*/
+.manager-dropdown {
+  position: absolute;
+  top: 35px;
+  right: 0;
+  background: rgba(64, 64, 64, 0.95);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 200px;
+
+  /* Z-index phải cao hơn taskbar (1000) */
+  z-index: 1001;
+}
+
+.left-panel {
+  flex: 0 0 450px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.right-panel {
+  flex-grow: 1;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.taskbar {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #d32f2f;
+  padding: 6px 12px;
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.taskbar-left,
+.taskbar-center,
+.taskbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  height: 28px;
+}
+
+.system-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.task-item {
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  position: relative;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.task-item:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.task-item.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.task-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 20%;
+  width: 60%;
+  height: 3px;
+  background-color: #ffcc80;
+  border-radius: 5px;
+}
+
+.task-icon {
+  font-size: 14px;
+  color: white;
+  padding: 6px 8px;
+}
+
+.admin-menu-container {
+  position: relative;
+}
+
+.dropdown-btn {
+  background: rgba(245, 245, 245, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  text-align: left;
+  color: white;
+}
+
+.dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.box-siteId select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  padding: 8px 12px;
+  min-width: 150px;
+}
+
+.box-siteId select:hover,
+.box-siteId select:focus {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.box-siteId select option {
+  background-color: #333;
+  color: white;
+}
+
+.sidebar-taskbar {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  flex-shrink: 0;
+}
+
+.sidebar-task-item {
+  flex-grow: 1;
+  text-align: center;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+.sidebar-task-item:not(.active):hover {
+  background-color: #f5f5f5;
+  color: #000;
+}
+
+.sidebar-task-item.active {
+  background-color: #fbe4c5;
+  color: #333;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-warning-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #d32f2f;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.sidebar-content-container {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.modal-backdrop {
+  /* z-index phải cao hơn lớp phủ .manager-overlay (9999) */
+  z-index: 10000 !important;
+}
+
+/* Cửa sổ nội dung của Modal */
+.modal {
+  /* z-index phải cao hơn lớp nền của chính nó */
+  z-index: 10001 !important;
+}
+
+.connection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  color: white;
+  text-align: center;
+}
+
+.connection-message {
+  padding: 40px;
+  background-color: #333;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.connection-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.connection-message h1 {
+  margin-top: 0;
+  color: #ffc107; /* Màu vàng cảnh báo */
+}

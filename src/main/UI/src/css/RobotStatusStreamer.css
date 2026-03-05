@@ -1,0 +1,105 @@
+/* Thu nhỏ tổng thể */
+.status-card {
+  color: #1a202c;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  color: #fff;
+  font: 400 0.8rem "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Header */
+.status-header-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 6px;
+}
+
+.ws-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+.ws-indicator.connected {
+  background-color: #50fa7b;
+}
+
+.ws-indicator.disconnected {
+  background-color: #ff5555;
+}
+
+.status-subtitle {
+  font-size: 0.75rem;
+  color: #e0e0e0;
+}
+
+/* Grid thu nhỏ */
+.vehicle-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.status-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-info-label {
+  font-size: 0.65rem;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-info-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* Màu trạng thái */
+.status-active {
+  color: #50fa7b;
+}
+
+.status-standby {
+  color: #f1fa8c;
+}
+
+.status-offline {
+  color: #ff5555;
+}
+
+/* Pin */
+.status-battery-indicator {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.status-battery-bar {
+  width: 36px;
+  height: 6px;
+  background-color: #555;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.battery-fill {
+  height: 100%;
+  background-color: #50fa7b;
+  transition: width 0.3s ease-in-out;
+}

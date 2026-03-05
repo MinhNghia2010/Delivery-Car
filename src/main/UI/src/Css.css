@@ -1,0 +1,52 @@
+.circle-marker {
+  width: 30px;
+  height: 30px;
+  background-color: red;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 0 3px rgba(0,0,0,0.4);
+}
+
+.stats-panel {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 250px;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  padding: 16px;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.stats-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.stats-label {
+  font-size: 14px;
+}
+
+.stats-value {
+  font-family: monospace;
+  font-weight: bold;
+  color: #10ff03;
+}
+

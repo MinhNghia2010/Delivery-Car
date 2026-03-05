@@ -1,0 +1,118 @@
+/* --- Tổng thể trang --- */
+.site-relation-page {
+  background-color: #f4f7f9;
+  min-height: 100vh;
+  padding: 1.5rem; /* Giảm khoảng trống */
+}
+
+/* --- Khung nội dung chính --- */
+.content-frame {
+  background-color: #ffffff;
+  padding: 1.5rem; /* Giảm */
+  border-radius: 8px; /* Giảm bo góc */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07); /* Giảm đổ bóng */
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- Tiêu đề --- */
+.content-frame h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.5rem; /* Thêm để thu nhỏ font */
+  margin-bottom: 1.2rem !important; /* Giảm */
+  padding-bottom: 0.8rem; /* Giảm */
+  border-bottom: 1px solid #e9ecef;
+}
+
+.content-frame h4 {
+  color: #34495e;
+  font-weight: 500;
+  font-size: 1.1rem; /* Thêm để thu nhỏ font */
+  margin-top: 2rem !important; /* Giảm */
+  margin-bottom: 0.8rem !important; /* Giảm */
+}
+
+/* --- Nút và Form Controls --- */
+.form-select,
+.btn {
+  border-radius: 5px; /* Giảm */
+  font-size: 0.9rem; /* Thêm để thu nhỏ font */
+  transition: all 0.2s ease-in-out;
+}
+
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25); /* Giảm đổ bóng */
+}
+
+/* Căn chỉnh icon và text trong Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem; /* Giảm */
+  font-weight: 500;
+}
+
+/* Nút quay lại */
+.content-frame > .btn-outline-secondary {
+  margin-bottom: 1.2rem; /* Giảm */
+  border-width: 1px;
+}
+
+/* --- Bảng dữ liệu --- */
+.table {
+  vertical-align: middle;
+  border-radius: 6px; /* Giảm */
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Giảm */
+}
+
+.table thead.table-dark th {
+  background-color: #343a40;
+  border-color: #454d55;
+  padding: 0.8rem; /* Giảm */
+  font-weight: 600;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.table td,
+.table th {
+  padding: 0.8rem; /* Giảm */
+}
+
+/* Thông báo khi bảng trống */
+.table td.text-center {
+  padding: 1.5rem; /* Giảm */
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* --- Căn chỉnh các hàng (Row) --- */
+.row.mb-3 {
+  align-items: center;
+}
+
+/* --- Spinner --- */
+.spinner-border {
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* --- Thông báo (Alert) --- */
+.alert {
+  border-radius: 5px; /* Giảm */
+  font-weight: 500;
+  font-size: 0.9rem; /* Thêm */
+  padding: 0.8rem 1rem; /* Thêm */
+}
+
+/* Sửa lỗi nút Back */
+.content-frame > .btn-outline-secondary {
+  width: auto !important;
+  align-self: flex-start;
+  max-width: 180px; /* Giảm */
+}

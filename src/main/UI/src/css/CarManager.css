@@ -1,0 +1,50 @@
+.car-manager-page {
+  background-color: #f4f7f9;
+  padding: 30px;
+  min-height: calc(100vh - 70px);
+  margin-top: 4%;
+}
+
+.page-header h2 {
+  color: #343a40; /* Đổi màu chữ tiêu đề để nổi bật trên nền xám */
+}
+
+/* Container mới cho bảng để tạo hiệu ứng thẻ */
+.table-container {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden; /* Cần thiết để bo góc hoạt động với table */
+  background-color: #ffffff; /* Bảng vẫn có nền trắng */
+}
+
+/* === GHI ĐÈ STYLE CŨ ĐỂ LÀM BẢNG TO HƠN === */
+
+/* Bỏ style co chữ của table cũ đi */
+.car-manager-small .table {
+  font-size: 0.9rem !important; /* Tăng kích thước chữ cơ bản của bảng */
+  margin-bottom: 0; /* Xóa margin đáy của table-bootstrap */
+}
+
+/* Tăng kích thước cho các ô và tiêu đề của bảng */
+.car-manager-small .table th,
+.car-manager-small .table td {
+  font-size: 0.85rem !important; /* Tăng kích thước chữ trong ô */
+  padding: 1rem !important; /* Tăng khoảng cách trong ô cho thoáng */
+  vertical-align: middle; /* Căn giữa nội dung theo chiều dọc */
+}
+
+/* Tùy chỉnh màu sắc cho tiêu đề bảng */
+.car-manager-small .table thead {
+  background-color: #495057; /* Màu nền đậm hơn cho tiêu đề */
+  color: #ffffff;
+}
+
+/* Các style cũ khác giữ nguyên */
+.car-manager-small .btn {
+  font-size: 0.8rem !important;
+  padding: 0.4rem 0.8rem !important;
+}
+
+.car-manager-small .modal-title {
+  font-size: 1.2rem !important;
+}

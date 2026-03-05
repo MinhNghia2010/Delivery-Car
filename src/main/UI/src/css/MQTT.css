@@ -1,0 +1,212 @@
+/* --- Cài đặt nền cho cả trang --- */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  /* Đặt màu nền xám nhạt cho toàn bộ trang để làm nổi bật card nội dung */
+  background-color: #f4f7f9;
+}
+
+/* --- THAY ĐỔI LỚN: Biến container chính thành một card nội dung --- */
+.mqtt-container {
+  /* Giới hạn chiều rộng và căn giữa card */
+  max-width: 1000px;
+  margin: 0.5rem auto; /* Căn giữa và tạo khoảng cách với thanh điều hướng trên */
+
+  /* Styling cho card */
+  background-color: #ffffff;
+  border-radius: 12px; /* Bo góc mềm mại hơn */
+  box-shadow: 0 8px 24px rgba(21, 48, 115, 0.1); /* Đổ bóng chuyên nghiệp */
+  overflow: hidden; /* Đảm bảo các thành phần con tuân thủ bo góc */
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Tinh chỉnh Header bên trong card --- */
+.mqtt-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #eef2f7; /* Đường kẻ mảnh hơn, tinh tế hơn */
+  flex-shrink: 0;
+}
+
+.mqtt-header h1 {
+  color: #1a202c; /* Màu chữ tối, dễ đọc */
+  margin: 0;
+  font-size: 1.6em; /* Điều chỉnh lại kích thước tiêu đề */
+  font-weight: 600;
+}
+
+/* --- Làm nổi bật Status --- */
+.connection-status {
+  font-weight: 500;
+  font-size: 0.9em;
+  color: #e30019; /* Sử dụng màu đỏ của Viettel để tạo điểm nhấn */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* Khoảng cách giữa chữ và icon */
+}
+
+/* Thêm hiệu ứng chấm loading cho đẹp mắt */
+.connection-status::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #e30019;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(227, 0, 25, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(227, 0, 25, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(227, 0, 25, 0);
+  }
+}
+
+/* --- Container của bảng, giờ là một phần của card --- */
+.message-table-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  /* Không cần background, border, shadow riêng nữa vì đã nằm trong card */
+  padding: 12px 24px 24px 24px; /* Thêm padding để nội dung không bị dính sát */
+}
+
+.message-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.message-table thead {
+  background-color: transparent; /* Bỏ màu nền thead */
+  position: sticky;
+  top: 0;
+  background-color: #ffffff; /* Cần nền trắng để không bị trong suốt khi cuộn */
+  z-index: 10;
+}
+
+.message-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #718096; /* Màu chữ xám cho tiêu đề cột */
+  border-bottom: 2px solid #eef2f7;
+  font-size: 0.85em;
+  text-transform: uppercase; /* Viết hoa tiêu đề cột */
+  letter-spacing: 0.5px;
+}
+
+.message-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7; /* Đồng bộ màu đường kẻ */
+  color: #2d3748; /* Màu chữ chính đậm hơn */
+  vertical-align: middle;
+  font-size: 0.95em;
+}
+
+.message-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.no-messages {
+  text-align: center;
+  color: #a0aec0; /* Màu chữ nhạt hơn */
+  font-size: 1.1em;
+  padding: 80px 0;
+  font-style: italic;
+}
+
+.actions-cell {
+  text-align: right;
+}
+
+/* --- Thiết kế lại nút bấm --- */
+.view-button {
+  background-color: #f1f5f9; /* Nền xám nhạt */
+  color: #4a5568; /* Chữ màu xám đậm */
+  border: 1px solid #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.view-button:hover {
+  background-color: #e2e8f0;
+  color: #1a202c;
+  border-color: #cbd5e0;
+}
+
+/* --- Các phần Popup giữ lại để đảm bảo hoạt động --- */
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.popup-header h2 {
+  margin: 0;
+}
+
+.view-toggle label {
+  font-size: 0.9em;
+  color: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.view-toggle input {
+  margin-right: 5px;
+}
+
+.translated-details {
+  font-size: 16px;
+  line-height: 1.8;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.detail-row {
+  display: flex;
+  padding: 8px 5px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-key {
+  font-weight: bold;
+  color: #2c3e50;
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: #2980b9;
+  word-break: break-all;
+}
+
+.json-viewer {
+  background-color: #2d2d2d;
+  color: #cccccc;
+  padding: 15px;
+  border-radius: 5px;
+  max-height: 60vh;
+  overflow: auto;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+}
