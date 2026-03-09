@@ -18,7 +18,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // Cho phép mọi nguồn (giống SecurityConfig)
+                .setAllowedOriginPatterns(
+                        "http://localhost:3000",
+                        "http://localhost:4000",
+                        "https://vtmen.vercel.app",
+                        "*"
+                )
                 .withSockJS();
     }
 }

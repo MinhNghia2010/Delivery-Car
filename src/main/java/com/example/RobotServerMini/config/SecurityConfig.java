@@ -48,7 +48,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000",
+                "http://localhost:4000",
                 "http://192.168.*.*:3000",
+                "https://vtmen.vercel.app",
                 "*"
         ));
 

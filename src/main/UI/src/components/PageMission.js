@@ -88,17 +88,22 @@ export default function OrderPage() {
       }
     }, 2000); // 2000ms = 2 giây
 
-    // 3. Kết nối WebSocket (Giữ nguyên làm phương án Realtime ưu tiên)
+    // 3. Kết nối WebSocket (Realtime ưu tiên)
     const client = new Client({
       webSocketFactory: () => new SockJS(WS_URL),
       onConnect: () => {
         console.log("WebSocket Connected");
-        client.subscribe("/topic/new-orders", (msg) => {
-          const newOrder = JSON.parse(msg.body);
-          // Thêm logic check trùng để tránh bị hiện 2 lần (do vừa có Socket vừa có Polling 2s)
+        // Lắng nghe mọi thay đổi danh sách đơn đang xử lý
+        client.subscribe("/topic/orders", (msg) => {
+          const latestOrders = JSON.parse(msg.body);
+          console.log("📦 [WS] Cập nhật danh sách đơn:", latestOrders);
+
           setActiveOrders((prev) => {
-            if (prev.find((o) => o.id === newOrder.id)) return prev;
-            return [newOrder, ...prev];
+            // Nếu số lượng đơn tăng lên -> coi như có đơn mới
+            if (latestOrders.length > prev.length) {
+              alert("📦 Có đơn hàng mới được tạo!");
+            }
+            return latestOrders;
           });
         });
       },

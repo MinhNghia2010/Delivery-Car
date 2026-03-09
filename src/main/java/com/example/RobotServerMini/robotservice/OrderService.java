@@ -2,10 +2,13 @@ package com.example.RobotServerMini.robotservice;
 
 import com.example.RobotServerMini.models.OrderModel;
 import com.example.RobotServerMini.repository.OrderRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,6 +23,12 @@ public class OrderService {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // Lấy danh sách đang xử lý
     public List<OrderModel> getActiveOrders() {
@@ -76,6 +85,18 @@ public class OrderService {
     // Hàm tạo test data
     public OrderModel createOrder(OrderModel order) {
         order.setStatus("PENDING");
-        return orderRepository.save(order);
+        OrderModel saved = orderRepository.save(order);
+        publishOrderEvent();
+        return saved;
+    }
+
+    private void publishOrderEvent() {
+        try {
+            String payload = objectMapper.writeValueAsString(getActiveOrders());
+            stringRedisTemplate.convertAndSend("order_topic", payload);
+        } catch (JsonProcessingException e) {
+            // Nếu có lỗi serialize thì log ra cho dễ debug
+            e.printStackTrace();
+        }
     }
 }
