@@ -1,9 +1,11 @@
 package com.example.RobotServerMini.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Document(collection = "orders")
 public class OrderModel {
     @Id

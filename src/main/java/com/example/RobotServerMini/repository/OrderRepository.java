@@ -9,4 +9,5 @@ import java.util.List;
 public interface OrderRepository extends MongoRepository<OrderModel, String> {
     // Tìm đơn chưa hoàn thành để hiện ở Tab Active
     List<OrderModel> findByStatus(String status);
+    boolean existsByOrderCode(String orderCode);
 }
