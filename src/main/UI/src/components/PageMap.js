@@ -68,7 +68,8 @@ const RobotMap = ({
     originLayer: null,
     waypointLayer: null,
     targetLayer: null,
-    topoLayer: null, // Layer cho robot từ WebSocket (sẽ cần sửa)
+    topoLayer: null,
+    plannedPathLayer: null,
   });
   const getColorForRobot = (id) => {
     const colors = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#00FFFF"];
@@ -119,7 +120,7 @@ const RobotMap = ({
   const [isSetOriginMode, setIsSetOriginMode] = useState(false);
   const [mapOrigin, setMapOrigin] = useState([0, 0]); // Gốc tọa độ (0,0) mới trên bản đồ
   const [showSetupMenu, setShowSetupMenu] = useState(false);
-  const [pixelsPerMeter, setPixelsPerMeter] = useState(20.0);
+  const [pixelsPerMm, setPixelsPerMm] = useState(0.02);
   const [isWsEnabled, setIsWsEnabled] = useState(true); // true = Bật, false = Tắt
   // Ref cho các layer mới
   const originLayerRef = useRef(null);
@@ -134,10 +135,15 @@ const RobotMap = ({
     isSetOriginModeRef.current = isSetOriginMode;
   }, [isSetOriginMode]);
 
+  useEffect(() => {
+    animationTargetsRef.current = {};
+    console.log("🔄 Đã reset bộ đệm Animation do Origin thay đổi.");
+  }, [mapOrigin]);
 
   useEffect(() => {
     robotsRef.current = robots;
   }, [robots]);
+
   const [selectedRobotId, setSelectedRobotId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hoverInfo, setHoverInfo] = useState(null);
@@ -260,14 +266,13 @@ const RobotMap = ({
     // 5. TÍNH TOÁN RA PIXEL ĐỂ VẼ
     if (pathToDraw.length > 1) {
       const [originX, originY] = mapOrigin;
-      const toMeter = (val) => (val > 10000 ? val / 1000 : val);
 
       // Lọc bỏ những điểm bị lỗi NaN hoặc undefined để chống sập OpenLayers
       const pixelCoords = pathToDraw
         .filter((p) => p.x != null && p.y != null)
         .map((p) => [
-          originX + toMeter(p.x) * pixelsPerMeter,
-          originY + toMeter(p.y) * pixelsPerMeter,
+          originX + p.x * pixelsPerMm,
+          originY + p.y * pixelsPerMm,
         ]);
 
       if (pixelCoords.length > 1) {
@@ -296,7 +301,7 @@ const RobotMap = ({
         }
       }
     }
-  }, [plannedPath, selectedRobotData, mapOrigin, pixelsPerMeter]);
+  }, [plannedPath, selectedRobotData, mapOrigin, pixelsPerMm]);
 
   const defaultPlaceholder = {
     vehicleId: "No",
@@ -419,7 +424,7 @@ const RobotMap = ({
       if (!pathData || pathData.length <= 1) return;
 
       // Đổi tọa độ mét -> pixel
-      const coordinates = pathData.map((p) => [originX + p.x * pixelsPerMeter, originY + p.y * pixelsPerMeter]);
+      const coordinates = pathData.map((p) => [originX + p.x * pixelsPerMm, originY + p.y * pixelsPerMm]);
 
       const routeFeature = new Feature({
         geometry: new LineString(coordinates),
@@ -445,7 +450,7 @@ const RobotMap = ({
 
       pathLayer.getSource().addFeature(routeFeature);
     });
-  }, [robotPaths, mapOrigin, pixelsPerMeter]);
+  }, [robotPaths, mapOrigin, pixelsPerMm]);
 
   useEffect(() => {
     mapOriginRef.current = mapOrigin;
@@ -553,7 +558,31 @@ const RobotMap = ({
             }
           });
 
-          client.subscribe("/topic/alerts", (message) => { });
+          client.subscribe("/topic/alerts", (message) => {
+            try {
+              const alertData = JSON.parse(message.body);
+              console.log("🔔 [ALERT By ROBOT]:", alertData);
+
+              // 1. Nếu Robot báo NHẬN LỆNH THÀNH CÔNG
+              if (alertData.type === "TASK_ACK" || alertData.type === "TASK_SLICE_ACK" || alertData.type === "TASK_PAUSED" || alertData.type === "TASK_RESUMED" || alertData.type === "TASK_CANCELED") {
+                alert(`ROBOT confirm: ${alertData.message}`);
+              }
+              // 2. Nếu Robot báo LỖI TỪ CHỐI LỆNH hoặc MẤT MẠNG (Timeout)
+              else if (alertData.type === "TASK_FAILED" || alertData.type === "TASK_TIMEOUT") {
+                alert(`❌ ROBOT Refuse / LỖI: ${alertData.message}`);
+              }
+              // 3. Các sự kiện xe tới đích
+              else if (alertData.type === "TASK_FINISHED") {
+                alert(`🏁 Finish: ${alertData.message}`);
+              }
+
+              // (Tùy chọn) Tăng biến đếm thông báo ở góc màn hình
+              setUnreadAlertCount((prev) => prev + 1);
+
+            } catch (e) {
+              console.error("Lỗi parse alert:", e);
+            }
+          });
         },
         onDisconnect: () => {
           // ... (giữ nguyên)
@@ -597,9 +626,6 @@ const RobotMap = ({
 
     const [originX, originY] = mapOrigin;
 
-    // Hàm chuẩn hóa đơn vị (phòng hờ file cũ dùng mm)
-    const toMeter = (val) => (val > 10000 ? val / 1000 : val);
-
     // =========================================================
     // 1. VẼ VÙNG CẤM (Forbidden Area) - Lớp dưới cùng (Z: 1)
     // =========================================================
@@ -607,7 +633,7 @@ const RobotMap = ({
       topoData.map.forbiddenArea.forEach((area) => {
         if (area.points && area.points.length > 0) {
           const pixelCoords = area.points.map((p) => {
-            return [originX + toMeter(p.x) * pixelsPerMeter, originY + toMeter(p.y) * pixelsPerMeter];
+            return [originX + p.x * pixelsPerMm, originY + p.y * pixelsPerMm];
           });
           pixelCoords.push(pixelCoords[0]); // Đóng vòng
 
@@ -638,10 +664,10 @@ const RobotMap = ({
           const cp2 = lane.control_points[0][1];
 
           // Đổi sang Pixel
-          const pStart = [originX + toMeter(start.x) * pixelsPerMeter, originY + toMeter(start.y) * pixelsPerMeter];
-          const pEnd = [originX + toMeter(end.x) * pixelsPerMeter, originY + toMeter(end.y) * pixelsPerMeter];
-          const pCp1 = [originX + toMeter(cp1.x) * pixelsPerMeter, originY + toMeter(cp1.y) * pixelsPerMeter];
-          const pCp2 = [originX + toMeter(cp2.x) * pixelsPerMeter, originY + toMeter(cp2.y) * pixelsPerMeter];
+          const pStart = [originX + start.x * pixelsPerMm, originY + start.y * pixelsPerMm];
+          const pEnd = [originX + end.x * pixelsPerMm, originY + end.y * pixelsPerMm];
+          const pCp1 = [originX + cp1.x * pixelsPerMm, originY + cp1.y * pixelsPerMm];
+          const pCp2 = [originX + cp2.x * pixelsPerMm, originY + cp2.y * pixelsPerMm];
 
           // Tính toán Bezier
           const curveCoords = generateBezierPath(pStart, pEnd, pCp1, pCp2, 25);
@@ -668,23 +694,23 @@ const RobotMap = ({
           // Vẽ 2 điểm điều khiển để biết độ cong
           // --- B. VẼ CONTROL POINTS (ĐỎ) ---
           // Vẽ 2 điểm điều khiển để biết độ cong
-          [pCp1, pCp2].forEach((cpCoord, idx) => {
-            const cpFeature = new Feature({
-              geometry: new Point(cpCoord),
-              type: "control-point"
-            });
-            cpFeature.setStyle(
-              new Style({
-                image: new CircleStyle({
-                  radius: 3, // Nhỏ hơn node
-                  fill: new Fill({ color: "#FF0000" }), // 🔴 ĐỔI THÀNH ĐỎ ĐỂ NHẬN DIỆN LÀ ĐIỂM ẢO
-                  stroke: null
-                }),
-                zIndex: 6 // Nằm trên đường nhưng dưới Node
-              })
-            );
-            source.addFeature(cpFeature);
-          });
+          // [pCp1, pCp2].forEach((cpCoord, idx) => {
+          //   const cpFeature = new Feature({
+          //     geometry: new Point(cpCoord),
+          //     type: "control-point"
+          //   });
+          //   cpFeature.setStyle(
+          //     new Style({
+          //       image: new CircleStyle({
+          //         radius: 3, // Nhỏ hơn node
+          //         fill: new Fill({ color: "#FF0000" }), // 🔴 ĐỔI THÀNH ĐỎ ĐỂ NHẬN DIỆN LÀ ĐIỂM ẢO
+          //         stroke: null
+          //       }),
+          //       zIndex: 6 // Nằm trên đường nhưng dưới Node
+          //     })
+          //   );
+          //   source.addFeature(cpFeature);
+          // });
         }
       });
     }
@@ -694,8 +720,8 @@ const RobotMap = ({
     // =========================================================
     if (topoData.points) {
       topoData.points.forEach((pt) => {
-        const px = originX + toMeter(pt.x) * pixelsPerMeter;
-        const py = originY + toMeter(pt.y) * pixelsPerMeter;
+        const px = originX + pt.x * pixelsPerMm;
+        const py = originY + pt.y * pixelsPerMm;
 
         const pointFeature = new Feature({
           geometry: new Point([px, py]),
@@ -707,8 +733,8 @@ const RobotMap = ({
           type: "topo-point",
           originalData: {
             id: pt.id,
-            x: toMeter(pt.x),
-            y: toMeter(pt.y),
+            x: pt.x,
+            y: pt.y,
             yaw: pt.yaw || 0,
             type: pt.type // Lưu type để debug nếu cần
           },
@@ -790,7 +816,7 @@ const RobotMap = ({
     }
 
     console.log("✅ Đã vẽ Full Topo: Forbidden, Lanes (Gray), ControlPoints (Blue), Nodes (Red), Stoppoints (Green).");
-  }, [topoData, mapOrigin, hasOriginBeenSet, pixelsPerMeter]);
+  }, [topoData, mapOrigin, hasOriginBeenSet, pixelsPerMm]);
 
   const handleWaypointFileUpload = (event) => {
     const file = event.target.files[0];
@@ -821,8 +847,8 @@ const RobotMap = ({
 
         // Convert mét -> pixel
         const [originX, originY] = mapOrigin;
-        const mapX = originX + p_x * pixelsPerMeter;
-        const mapY = originY + p_y * pixelsPerMeter;
+        const mapX = originX + p_x * pixelsPerMm;
+        const mapY = originY + p_y * pixelsPerMm;
         const defaultName = `Point-${index}`;
 
         // Tạo Feature
@@ -935,8 +961,8 @@ const RobotMap = ({
     destinations.forEach((point, index) => {
       // --- KHẮC PHỤC LỖI Ở ĐÂY ---
       // Phải đổi từ Mét -> Pixel: (Gốc + Mét * Tỉ lệ)
-      const pixelX = originX + point.x * pixelsPerMeter;
-      const pixelY = originY + point.y * pixelsPerMeter;
+      const pixelX = originX + point.x * pixelsPerMm;
+      const pixelY = originY + point.y * pixelsPerMm;
       const pixelCoord = [pixelX, pixelY];
 
       pathCoordinates.push(pixelCoord); // Lưu lại để vẽ dây
@@ -967,7 +993,7 @@ const RobotMap = ({
       );
       source.addFeature(feature);
     });
-  }, [destinations, mapOrigin, pixelsPerMeter]); // Quan trọng: Thêm mapOrigin, pixelsPerMeter vào dependency
+  }, [destinations, mapOrigin, pixelsPerMm]); // Quan trọng: Thêm mapOrigin, pixelsPerMm vào dependency
 
   useEffect(() => {
     // Nếu map đã khởi tạo rồi thì return
@@ -995,7 +1021,7 @@ const RobotMap = ({
         maxZoom: 22,
       });
 
-      // Lưu ý: Khi dùng vệ tinh, pixelsPerMeter sẽ không còn cố định như ảnh tĩnh
+      // Lưu ý: Khi dùng vệ tinh, pixelsPerMm sẽ không còn cố định như ảnh tĩnh
       // Nó phụ thuộc vào mức Zoom. Logic vẽ robot có thể bị lệch nếu không convert tọa độ GPS.
     } else {
       // === CASE 2: MAP ẢNH TĨNH (CODE CŨ) ===
@@ -1089,9 +1115,11 @@ const RobotMap = ({
     mapInstanceRef.current = map;
 
     // Cập nhật gốc tọa độ ban đầu (vẽ marker)
-    setMapOrigin([0, 0]);
+    // setMapOrigin([0, 0]); // 🔥 ĐÃ XÓA: Không ép nó về 0,0 nữa
+    setMapOrigin(prev => [...prev]);
     originLayerRef.current.getSource().clear();
-    const originFeature = createFeature(0, 0, customOriginStyle);
+    // 🔥 Lấy chính xác tọa độ (1375, 1375) đã tính toán trước đó để vẽ Marker hình chữ X
+    const originFeature = createFeature(mapOrigin[0], mapOrigin[1], customOriginStyle);
     originLayerRef.current.getSource().addFeature(originFeature);
 
     const popup = new Overlay({
@@ -1232,18 +1260,18 @@ const RobotMap = ({
         const clickedPixel = e.coordinate;
 
         // Convert Pixel -> Mét
-        const x_meter = (clickedPixel[0] - originX) / pixelsPerMeter;
+        const x_mm = (clickedPixel[0] - originX) / pixelsPerMm;
         // Lưu ý: Hệ trục y của ảnh thường hướng xuống, còn bản đồ thực địa có thể hướng lên
         // Nếu thấy Y bị ngược dấu thì đổi thành: -(clickedPixel[1] - originY)
-        const y_meter = (clickedPixel[1] - originY) / pixelsPerMeter;
+        const y_mm = (clickedPixel[1] - originY) / pixelsPerMm;
 
-        console.log(`Manual Click: ${x_meter.toFixed(2)}, ${y_meter.toFixed(2)}`);
+        console.log(`Manual Click: ${x_mm.toFixed(2)}, ${y_mm.toFixed(2)}`);
 
         onMapPointClick({
           parkPointId: `Manual_${Date.now()}`,
-          name: `M (${x_meter.toFixed(1)}, ${y_meter.toFixed(1)})`,
-          x: x_meter,
-          y: y_meter,
+          name: `M (${x_mm.toFixed(1)}, ${y_mm.toFixed(1)})`,
+          x: x_mm,
+          y: y_mm,
           z: 0,
         });
       }
@@ -1290,8 +1318,11 @@ const RobotMap = ({
       const robotId = robot.vehicleId;
 
       // 3. Tính toán dữ liệu THÔ (Raw)
-      const x_pixels = robot.x * pixelsPerMeter;
-      const y_pixels = robot.y * pixelsPerMeter;
+      // Robot gửi tọa độ dạng Mét, nhưng pixelsPerMm cần Millimet → nhân 1000
+      const x_mm = robot.x * 1000;
+      const y_mm = robot.y * 1000;
+      const x_pixels = x_mm * pixelsPerMm;
+      const y_pixels = y_mm * pixelsPerMm;
       const mapX = originX + x_pixels;
       const mapY = originY + y_pixels;
       const newRawCoords = [mapX, mapY];
@@ -1359,7 +1390,7 @@ const RobotMap = ({
         rotation: smoothedRotation,
       };
     });
-  }, [robots, mapOrigin, pixelsPerMeter]); //
+  }, [robots, mapOrigin, pixelsPerMm]); //
 
   useEffect(() => {
     // Tốc độ di chuyển (0.1 = rất mượt, 0.5 = nhanh, 1.0 = tắt)
@@ -1494,12 +1525,33 @@ const RobotMap = ({
     }
     // --- LOGIC ĐỌC JSON ---
     // --- LOGIC ĐỌC JSON (ĐÃ CẬP NHẬT TÍNH TOÁN NODE GẦN NHẤT) ---
-    if (jsonFile) {
+ if (jsonFile) {
       const jsonReader = new FileReader();
       jsonReader.onload = (ev) => {
         try {
           const jsonData = JSON.parse(ev.target.result);
+          const toMm = (val) => val * 1000; // Hàm ép sang mm
 
+          // ÉP TOÀN BỘ TOPO.JSON SANG MM
+          if (jsonData.points) {
+            jsonData.points.forEach(p => { p.x = toMm(p.x); p.y = toMm(p.y); });
+          }
+          if (jsonData.nodes) {
+            jsonData.nodes.forEach(n => { n.coordinate.x = toMm(n.coordinate.x); n.coordinate.y = toMm(n.coordinate.y); });
+          }
+          if (jsonData.lanes) {
+            jsonData.lanes.forEach(l => {
+              if (l.anchor_points) l.anchor_points.forEach(p => { p.x = toMm(p.x); p.y = toMm(p.y); });
+              if (l.control_points) l.control_points.forEach(pair => pair.forEach(p => { p.x = toMm(p.x); p.y = toMm(p.y); }));
+              if (l.length) l.length = toMm(l.length);
+              if (l.radius) l.radius = toMm(l.radius);
+            });
+          }
+          if (jsonData.map && jsonData.map.forbiddenArea) {
+             jsonData.map.forbiddenArea.forEach(area => {
+                if (area.points) area.points.forEach(p => { p.x = toMm(p.x); p.y = toMm(p.y); });
+             });
+          }
           // 🔥 BẮT ĐẦU TÍNH TOÁN NODE GẦN NHẤT 🔥
           if (jsonData.points && jsonData.nodes) {
             console.log("🔄 Đang tính toán Node gần nhất cho từng Point...");
@@ -1588,15 +1640,14 @@ const RobotMap = ({
         // Công thức: 1 mét / resolution (m/px) = px/m
         // Ví dụ: resolution 0.05 => 1 / 0.05 = 20 px/m
         if (parsedData.resolution) {
-          const ppm = 1 / parsedData.resolution;
-          setTempResolution(ppm); // Lưu tạm
+          const ppmm = 1 / (parsedData.resolution * 1000); 
+          setTempResolution(ppmm); 
         }
 
         // Lưu tạm Origin từ YAML (nếu cần dùng để set gốc tọa độ tự động)
         if (parsedData.origin) {
-          // Origin trong YAML ROS thường là góc dưới cùng bên trái của ảnh so với gốc thế giới thực
-          // [x_real, y_real, theta]
-          setTempOrigin([parsedData.origin[0], parsedData.origin[1]]);
+          // ÉP GỐC TỌA ĐỘ SANG MM
+          setTempOrigin([parsedData.origin[0] * 1000, parsedData.origin[1] * 1000]);
         }
       };
       img.src = url;
@@ -1621,16 +1672,25 @@ const RobotMap = ({
 
       // ✅ CẬP NHẬT PIXELS PER METER TỰ ĐỘNG TỪ YAML
       if (tempResolution) {
-        setPixelsPerMeter(tempResolution);
+        setPixelsPerMm(tempResolution);
         console.log(`Đã cập nhật tỉ lệ bản đồ: ${tempResolution} px/m`);
       }
 
-      // (Tùy chọn) Cập nhật Origin tự động từ YAML nếu muốn
-      // Lưu ý: Logic Origin của YAML ROS hơi ngược với hệ tọa độ ảnh Canvas, cần test kỹ nếu muốn auto set origin.
-      // Tạm thời tôi sẽ log ra để bạn kiểm tra.
-      if (tempOrigin) {
-        console.log("Origin từ YAML (tham khảo):", tempOrigin);
-        // setMapOrigin([0, 0]); // Hoặc logic map origin theo ý bạn
+      // 🔥 LOGIC MỚI: TỰ ĐỘNG CHỐT GỐC TỌA ĐỘ TỪ FILE YAML
+      if (tempOrigin && tempResolution) {
+        // tempOrigin đang là [-68.75, -68.75]. Ta dùng Math.abs để ép thành số dương [68.75, 68.75]
+        const positiveOriginX_m = Math.abs(tempOrigin[0]);
+        const positiveOriginY_m = Math.abs(tempOrigin[1]);
+
+        // Đổi từ mét sang pixel màn hình
+        const autoOriginPixelX = positiveOriginX_m * tempResolution;
+        const autoOriginPixelY = positiveOriginY_m * tempResolution;
+
+        // Tự động ghim gốc tọa độ và đánh dấu "đã set origin"
+        setMapOrigin([autoOriginPixelX, autoOriginPixelY]);
+        setHasOriginBeenSet(true);
+        
+        console.log(`🎯 Tự động Set Origin: YAML[${tempOrigin[0]}, ${tempOrigin[1]}] -> Dương[${positiveOriginX_m}, ${positiveOriginY_m}]m -> Pixel(${autoOriginPixelX}, ${autoOriginPixelY})`);
       }
       if (topoData) {
         uploadMapToBackend(topoData);
@@ -1647,6 +1707,8 @@ const RobotMap = ({
       originLayer: null,
       waypointLayer: null,
       targetLayer: null,
+      topoLayer: null,
+      plannedPathLayer: null
     };
 
     setShowMapConfig(false);
@@ -1659,8 +1721,8 @@ const RobotMap = ({
         {hoverInfo && (
           <>
             <strong>{hoverInfo.name}</strong>
-            <div>X: {hoverInfo.x?.toFixed(2)}</div>
-            <div>Y: {hoverInfo.y?.toFixed(2)}</div>
+            <div>X: {hoverInfo.x != null ? hoverInfo.x.toFixed(0) : 0} mm</div>
+            <div>Y: {hoverInfo.y != null ? hoverInfo.y.toFixed(0) : 0} mm</div>
           </>
         )}
       </div>
@@ -1806,12 +1868,12 @@ const RobotMap = ({
           <span style={{ whiteSpace: "nowrap" }}>
             <b>POS:</b>{" "}
             <span style={{ color: "#fff" }}>
-              ({dataToShow.x?.toFixed(2)}, {dataToShow.y?.toFixed(2)})
+              ({dataToShow.x != null ? dataToShow.x.toFixed(0) : 0}, {dataToShow.y != null ? dataToShow.y.toFixed(0) : 0}) mm
             </span>
           </span>
           <span style={{ whiteSpace: "nowrap" }}>
-            <b>Z:</b> <span style={{ color: "#fff" }}>{(dataToShow.z || 0).toFixed(2)} m</span>
-          </span>
+            {/* Tùy chọn: Z cũng đổi sang mm nếu cần */}
+            <b>Z:</b> <span style={{ color: "#fff" }}>{dataToShow.z != null ? (dataToShow.z).toFixed(0) : 0} mm</span>          </span>
 
           <span style={{ whiteSpace: "nowrap" }}>
             <b>YAW:</b> <span style={{ color: "#fff" }}>{(dataToShow.yaw || 0).toFixed(1)}°</span>

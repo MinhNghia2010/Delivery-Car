@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { Toast } from "react-bootstrap";
 import "../css/PageMission.css";
 import { API_ORDERS_ACTIVE, API_ORDERS_HISTORY, API_ORDER_COMPLETE, WS_URL } from "../api";
 
@@ -9,6 +10,18 @@ export default function OrderPage() {
   const [historyOrders, setHistoryOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("ACTIVE");
+
+  // Toast state
+  const [toasts, setToasts] = useState([]);
+  // Refs for toast diffing — a Set/Map that only grows, never resets
+  const knownIdsRef = useRef(new Set());       // all order IDs ever seen
+  const knownStatusesRef = useRef(new Map());  // id → last known status
+
+  const showToast = useCallback((message, type = "info") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }, []);
 
   // State 4 ô lọc
   const [filterDate, setFilterDate] = useState("");
@@ -19,11 +32,19 @@ export default function OrderPage() {
 
   const stompClientRef = useRef(null);
 
-  // 1. Fetch Đơn Active (Chỉ cần lấy 1 lần, lọc ở Client)
+  // 1. Fetch Đơn Active — silently sync state + seed known IDs (no toast)
   const fetchActiveOrders = async () => {
     try {
       const res = await fetch(API_ORDERS_ACTIVE);
-      if (res.ok) setActiveOrders(await res.json());
+      if (res.ok) {
+        const latest = await res.json();
+        // Seed the known set so existing orders are never treated as "new"
+        latest.forEach((o) => {
+          knownIdsRef.current.add(o.id);
+          knownStatusesRef.current.set(o.id, o.status);
+        });
+        setActiveOrders(latest);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -52,15 +73,31 @@ export default function OrderPage() {
   const handleCompleteOrder = async (orderId) => {
     if (!window.confirm("Xác nhận hoàn thành đơn này?")) return;
     try {
-      await fetch(API_ORDER_COMPLETE(orderId), {
-        method: "POST",
-      });
+      await fetch(API_ORDER_COMPLETE(orderId), { method: "POST" });
+      showToast("✅ Đơn hàng đã hoàn thành!", "success");
       fetchActiveOrders();
-      // Nếu đang ở tab history thì refresh luôn
       if (activeTab === "HISTORY") fetchHistoryOrders();
     } catch (e) {
-      alert("Lỗi kết nối server!");
+      showToast("❌ Lỗi kết nối server!", "danger");
     }
+  };
+
+  // Toast diff — only called from WS handler, uses the ever-growing Sets
+  const diffAndToast = (latest) => {
+    // Skip if we haven't seeded known IDs yet
+    if (knownIdsRef.current.size === 0) return;
+    latest.forEach((order) => {
+      if (!knownIdsRef.current.has(order.id)) {
+        // Genuinely new order
+        showToast(`📦 Đơn mới: ${order.orderCode || order.fullName || order.id}`, "info");
+      } else if (knownStatusesRef.current.get(order.id) !== order.status) {
+        // Status changed
+        showToast(`🔄 Đơn ${order.orderCode || order.id}: ${knownStatusesRef.current.get(order.id)} → ${order.status}`, "warning");
+      }
+      // Always update known status
+      knownIdsRef.current.add(order.id);
+      knownStatusesRef.current.set(order.id, order.status);
+    });
   };
 
   // --- 🔥 LOGIC TỰ ĐỘNG LỌC (AUTO FILTER) ---
@@ -97,14 +134,8 @@ export default function OrderPage() {
         client.subscribe("/topic/orders", (msg) => {
           const latestOrders = JSON.parse(msg.body);
           console.log("📦 [WS] Cập nhật danh sách đơn:", latestOrders);
-
-          setActiveOrders((prev) => {
-            // Nếu số lượng đơn tăng lên -> coi như có đơn mới
-            if (latestOrders.length > prev.length) {
-              alert("📦 Có đơn hàng mới được tạo!");
-            }
-            return latestOrders;
-          });
+          diffAndToast(latestOrders);   // only WS triggers toast
+          setActiveOrders(latestOrders);
         });
       },
     });
@@ -124,6 +155,36 @@ export default function OrderPage() {
 
   return (
     <div className="order-page-layout">
+
+      {/* ── TOAST STACK ── */}
+      <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", gap: 8 }}>
+        {toasts.map((t) => (
+          <Toast
+            key={t.id}
+            show
+            onClose={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+            delay={4000}
+            autohide
+            style={{ minWidth: 280 }}
+          >
+            <Toast.Header className={
+              t.type === "success" ? "bg-success text-white" :
+              t.type === "danger"  ? "bg-danger text-white"  :
+              t.type === "warning" ? "bg-warning text-dark"  :
+              "bg-primary text-white"
+            }>
+              <strong className="me-auto">
+                {t.type === "success" ? "✅ Thành công" :
+                 t.type === "danger"  ? "❌ Lỗi" :
+                 t.type === "warning" ? "🔄 Cập nhật" :
+                 "📦 Đơn hàng"}
+              </strong>
+            </Toast.Header>
+            <Toast.Body>{t.message}</Toast.Body>
+          </Toast>
+        ))}
+      </div>
+
       <div className="panel-container list-panel" style={{ width: "100%" }}>
         <div className="list-header-wrapper">
           <div className="list-header-top">

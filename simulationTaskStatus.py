@@ -23,7 +23,7 @@ STX = 0x02; DIR = 0x56; ETX = 0x03; NEWLINE = 0x0A
 # 2. STATE MACHINE (BỘ NHỚ TRẠNG THÁI CỦA XE)
 # ==============================================================================
 robot_state = {
-    "x": 65.0, "y": 70.0, "z": 0.0, "theta": 0.0,
+    "x": 0.0, "y": 0.0, "z": 0.0, "theta": 0.0,
     "task_id": None,    
     "status_code": 0,   # 0: Idle, 40: Running, 50: Paused, 60: Finished
     "drive_mode": "Auto",

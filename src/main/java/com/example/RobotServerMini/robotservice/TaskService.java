@@ -28,6 +28,9 @@ public class TaskService {
     // Map lưu các lệnh đang chờ phản hồi
     public static final Map<String, Long> pendingTaskCommands = new ConcurrentHashMap<>();
 
+    //Kho lưu tạm bản tin Slice chờ gửi khi robot gửi report addtask thành công
+    public static final Map<String, Map<String, Object>> pendingSlices = new ConcurrentHashMap<>();
+
     // 1. GỬI QUY TRÌNH TASK: ADD TASK (HEADER) -> ADD TASK SLICE (PATH A*)
 // 1. GỬI QUY TRÌNH TASK: ADD TASK (HEADER) -> ADD TASK SLICE (PATH A* NHIỀU CHẶNG)
     public Map<String, Object> sendAddTask(Map<String, Object> payload) {
@@ -85,16 +88,12 @@ public class TaskService {
                 int[] targetPosMm = extractPositionMm(target);
                 int targetAngle = extractAngle(target);
 
-                double targetX_m = targetPosMm[0] / 1000.0;
-                double targetY_m = targetPosMm[1] / 1000.0;
+                double targetX_m = targetPosMm[0] ;
+                double targetY_m = targetPosMm[1] ;
 
-                // 1. Tìm Node A* cho chặng này
-                GraphService.GraphNode startNode = graphService.findNearestNode(currentX, currentY);
-                GraphService.GraphNode endNode = graphService.findNearestNode(targetX_m, targetY_m);
+                List<GraphService.GraphNode> segmentPath = graphService.findOptimalPath(currentX, currentY, targetX_m, targetY_m);
 
-                if (startNode != null && endNode != null) {
-
-                    List<GraphService.GraphNode> segmentPath = graphService.findPathAStar(startNode.id, endNode.id);
+                if (segmentPath != null && !segmentPath.isEmpty()) {
                     //Bổ sung : THUẬT TOÁN CHỐNG ĐI LÙI (ANTI-BACKTRACKING)
                     if (segmentPath.size() >= 2) {
                         GraphService.GraphNode firstNode = segmentPath.get(0);
@@ -108,14 +107,16 @@ public class TaskService {
                             segmentPath.remove(0);
                         }
                     }
-                    System.out.println("📍 Routing Chặng " + (i+1) + ": Node " + startNode.id + " -> Node " + endNode.id);
                     if (!segmentPath.isEmpty()) {
+                        GraphService.GraphNode startP = segmentPath.get(0);
+                        GraphService.GraphNode endP = segmentPath.get(segmentPath.size() - 1);
+                        System.out.println("📍 Routing Chặng " + (i+1) + ": Node " + startP.id + " -> Node " + endP.id);
                         allPathNodes.addAll(segmentPath); // Gom cho UI vẽ
 
                         for (GraphService.GraphNode node : segmentPath) {
                             Map<String, Object> wp = new LinkedHashMap<>();
                             wp.put("DestPoint", node.id);
-                            wp.put("Position", new int[]{(int)(node.x * 1000), (int)(node.y * 1000)});
+                            wp.put("Position", new int[]{(int) node.x, (int) node.y});
                             wp.put("LinearVelocity", 1000);
                             wp.put("AngleVelocity", 0);
                             wp.put("DestAngle", 0);
@@ -210,7 +211,7 @@ public class TaskService {
             wrapAndSend(addTaskPacket, vehicleId, "addTask");
 
 
-            // --- D. GỬI GÓI TIN 2: ADD TASK SLICE (BODY - PATH LIÊN HOÀN) ---
+// --- D. LƯU GÓI TIN 2 VÀO KHO TẠM (CHƯA GỬI NGAY) ---
             Map<String, Object> slicePacket = new LinkedHashMap<>();
             slicePacket.put("Action", "addTaskSlice");
 
@@ -223,16 +224,25 @@ public class TaskService {
             taskSlice.put("ID", "SLICE_" + System.currentTimeMillis());
             taskSlice.put("IsLastSlice", true);
             taskSlice.put("IsConditionalAction", false);
-            taskSlice.put("Condition", new HashMap<>()); // Trả về {}
+            taskSlice.put("Condition", new HashMap<>());
             taskSlice.put("CurrentPoint", "");
-            taskSlice.put("Actions", new ArrayList<>()); // Trả về []
-            taskSlice.put("ShelfAnglePoints", new ArrayList<>()); // Trả về []
-            taskSlice.put("WayPoints", sliceWayPoints); // Chứa toàn bộ A* của mọi chặng
+            taskSlice.put("Actions", new ArrayList<>());
+            taskSlice.put("ShelfAnglePoints", new ArrayList<>());
+            taskSlice.put("WayPoints", sliceWayPoints);
             sliceBody.put("TaskSlice", taskSlice);
             slicePacket.put("Body", sliceBody);
 
-            // Gửi Body
-            boolean sentSlice = wrapAndSend(slicePacket, vehicleId, "addTaskSlice");
+            // Sinh sẵn thông số Device, ID, Time
+            String sliceCmdId = "CMD_addTaskSlice_" + System.currentTimeMillis();
+            slicePacket.put("Device", vehicleId);
+            slicePacket.put("ID", sliceCmdId);
+            slicePacket.put("Time", System.currentTimeMillis() * 1000);
+
+            // 🔥 Đóng gói cất vào kho tạm (KHÔNG GỬI XUỐNG ROBOT)
+            pendingSlices.put(vehicleId, slicePacket);
+
+            // Giả lập trạng thái thành công để Frontend vẫn được vẽ đường vàng ngay lập tức
+            boolean sentSlice = true;
 
 
             // --- E. PHẢN HỒI CHO FRONTEND VẼ ĐƯỜNG VÀNG ---
@@ -359,20 +369,17 @@ public class TaskService {
         return sent;
     }
 
-    // Trích xuất tọa độ từ Object Frontend và chuyển sang mm (Int Array)
+    // Trích xuất tọa độ từ Object Frontend (Giờ Frontend đã gửi thuần mm)
     private int[] extractPositionMm(Map<String, Object> pointData) {
         try {
             Map<String, Object> pose = (Map<String, Object>) pointData.get("Pose");
             Map<String, Object> position = (Map<String, Object>) pose.get("Position");
 
-            // Frontend gửi mét (ví dụ 49.28), Robot cần mm (49280)
-            double xM = Double.parseDouble(String.valueOf(position.get("x")));
-            double yM = Double.parseDouble(String.valueOf(position.get("y")));
+            // Không nhân 1000 nữa, vì Web đã gửi thẳng mm
+            double xMm = Double.parseDouble(String.valueOf(position.get("x")));
+            double yMm = Double.parseDouble(String.valueOf(position.get("y")));
 
-            int xMm = (int) (xM * 1000); // chuyển m -> mm
-            int yMm = (int) (yM * 1000);
-
-            return new int[]{xMm, yMm};
+            return new int[]{(int) xMm, (int) yMm};
         } catch (Exception e) {
             return new int[]{0, 0};
         }

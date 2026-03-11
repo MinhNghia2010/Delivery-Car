@@ -157,6 +157,6 @@ public class RobotConnectionController {
 
     private String getCorrectLocalIp() {
         // Fix cứng IP theo đúng mạng hiện tại của bạn
-        return "192.168.28.77";
+        return "192.168.28.167";
     }
 }

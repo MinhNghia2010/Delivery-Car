@@ -47,9 +47,9 @@ const StatusRow = ({ device, index }) => {
 
       {/* 7. Position (X, Y, Z) */}
       <td style={{ fontSize: "12px", fontFamily: "monospace" }}>
-        <div>X: {safeFixed(device.x)}</div>
-        <div>Y: {safeFixed(device.y)}</div>
-        <div>Z: {safeFixed(device.z)}</div>
+        <div>X: {safeFixed(device.x, 0)}</div>
+        <div>Y: {safeFixed(device.y, 0)}</div>
+        <div>Z: {safeFixed(device.z, 0)}</div>
       </td>
 
       {/* 8. Yaw */}
@@ -164,7 +164,7 @@ const StatusManagementView = ({ devices = {} }) => {
               <th>Speed</th>
               <th>Battery</th>
               <th>Range</th>
-              <th>Position (m)</th>
+              <th>Position (mm)</th>
               <th>Yaw</th>
               <th>Location</th>
               <th>Task Info</th>

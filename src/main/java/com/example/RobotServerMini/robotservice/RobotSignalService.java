@@ -229,7 +229,6 @@ public class RobotSignalService {
                 if (status != null) {
                     uiPayload.put("x", status.x != null ? status.x : status.longitude);
                     uiPayload.put("y", status.y != null ? status.y : status.latitude);
-                    uiPayload.put("z", status.altitude);
                     uiPayload.put("yaw", status.azimuth);
                     uiPayload.put("speed", status.speed);
                     uiPayload.put("driveMode", status.driveMode);
@@ -310,8 +309,27 @@ public class RobotSignalService {
             TaskService.pendingTaskCommands.remove(signal.id); // Xóa lệnh đang chờ phản hồi
 
             switch (actionType) {
-                case "addTask": alertType = "TASK_ACK"; message = "Gửi nhiệm vụ tổng thành công!"; break;
-                case "addTaskSlice": alertType = "TASK_SLICE_ACK"; message = "Gửi quỹ đạo thành công!"; break;
+                case "addTask":
+                    alertType = "TASK_ACK";
+                    message = "Gửi nhiệm vụ tổng thành công! Đang nạp quỹ đạo...";
+
+                    // 🔥 BÓP CÒ: Lấy Slice từ kho ra và gửi đi ngay lập tức
+                    Map<String, Object> pendingSlice = TaskService.pendingSlices.remove(serial);
+                    if (pendingSlice != null) {
+                        System.out.println("🚀 Đã nhận ACK của addTask, bắn tiếp addTaskSlice xuống " + serial);
+                        protocolService.sendToRobot(serial, pendingSlice);
+
+                        // Đưa ID của bản tin Slice này vào danh sách chờ Timeout bảo vệ
+                        TaskService.pendingTaskCommands.put(String.valueOf(pendingSlice.get("ID")), System.currentTimeMillis());
+                    } else {
+                        System.err.println("⚠️ Không tìm thấy quỹ đạo (Slice) chờ sẵn cho xe: " + serial);
+                    }
+                    break;
+
+                case "addTaskSlice":
+                    alertType = "TASK_SLICE_ACK";
+                    message = "Gửi quỹ đạo thành công! Xe bắt đầu chạy.";
+                    break;
                 case "pauseTask": alertType = "TASK_PAUSED"; message = "Robot đã tạm dừng!"; break;
                 case "resumeTask": alertType = "TASK_RESUMED"; message = "Robot tiếp tục chạy!"; break;
                 case "cancelTask": alertType = "TASK_CANCELED"; message = "Robot đã hủy nhiệm vụ!"; break;

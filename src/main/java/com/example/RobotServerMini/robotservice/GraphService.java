@@ -97,22 +97,6 @@ public class GraphService {
         }
     }
 
-    // 2. TÌM NODE GẦN NHẤT VỚI MỘT TỌA ĐỘ BẤT KỲ
-    public GraphNode findNearestNode(double x, double y) {
-        if (graph.isEmpty()) buildGraph(); // Build lại nếu graph trống
-
-        GraphNode nearest = null;
-        double minDesc = Double.MAX_VALUE;
-
-        for (GraphNode node : graph.values()) {
-            double dist = calculateDistance(x, y, node.x, node.y);
-            if (dist < minDesc) {
-                minDesc = dist;
-                nearest = node;
-            }
-        }
-        return nearest;
-    }
 
     // 3. THUẬT TOÁN A* (A-STAR)
     public List<GraphNode> findPathAStar(String startNodeId, String endNodeId) {
@@ -195,5 +179,85 @@ public class GraphService {
 
         // Kiểm tra lại lần nữa sau khi đã thử build
         return graph != null && !graph.isEmpty();
+    }
+
+    public List<GraphNode> findKNearestNodes(double x, double y, int k) {
+        if (graph.isEmpty()) buildGraph();
+
+        // Dùng PriorityQueue để sắp xếp khoảng cách từ gần đến xa
+        PriorityQueue<GraphNode> pq = new PriorityQueue<>(
+                Comparator.comparingDouble(n -> calculateDistance(x, y, n.x, n.y))
+        );
+        pq.addAll(graph.values());
+
+        List<GraphNode> result = new ArrayList<>();
+        for (int i = 0; i < k && !pq.isEmpty(); i++) {
+            result.add(pq.poll());
+        }
+        return result;
+    }
+
+    // 2. Tính tổng chiều dài của một lộ trình các Node dựa trên trọng số cạnh (Đường thực tế)
+    private double calculatePathWeight(List<GraphNode> path) {
+        if (path == null || path.size() < 2) return 0.0;
+        double length = 0;
+        for (int i = 0; i < path.size() - 1; i++) {
+            GraphNode curr = path.get(i);
+            GraphNode next = path.get(i+1);
+            boolean edgeFound = false;
+            for (GraphEdge edge : curr.neighbors) {
+                if (edge.target.id.equals(next.id)) {
+                    length += edge.weight;
+                    edgeFound = true;
+                    break;
+                }
+            }
+            // Fallback nếu đồ thị lỗi không có cạnh nối
+            if (!edgeFound) {
+                length += calculateDistance(curr.x, curr.y, next.x, next.y);
+            }
+        }
+        return length;
+    }
+
+    // 3. THUẬT TOÁN TỐI ƯU CHÍNH: Tìm đường ngắn nhất dựa trên tổ hợp các Node xung quanh
+    public List<GraphNode> findOptimalPath(double startX, double startY, double endX, double endY) {
+        // Lấy 3 Node gần Robot nhất và 3 Node gần Đích nhất
+        List<GraphNode> startCandidates = findKNearestNodes(startX, startY, 3);
+        List<GraphNode> endCandidates = findKNearestNodes(endX, endY, 3);
+
+        List<GraphNode> bestPath = new ArrayList<>();
+        double minTotalCost = Double.MAX_VALUE;
+
+        // Duyệt qua tất cả các tổ hợp (StartNode -> EndNode)
+        for (GraphNode sNode : startCandidates) {
+            for (GraphNode eNode : endCandidates) {
+
+                List<GraphNode> currentPath;
+                if (sNode.id.equals(eNode.id)) {
+                    currentPath = new ArrayList<>();
+                    currentPath.add(sNode); // Nếu Start và End trùng nhau
+                } else {
+                    currentPath = findPathAStar(sNode.id, eNode.id);
+                }
+
+                if (!currentPath.isEmpty()) {
+                    // TỔNG CHI PHÍ = (Robot -> StartNode) + (A* Path) + (EndNode -> Target)
+                    double distToStart = calculateDistance(startX, startY, sNode.x, sNode.y);
+                    double pathCost = calculatePathWeight(currentPath);
+                    double distToEnd = calculateDistance(eNode.x, eNode.y, endX, endY);
+
+                    double totalCost = distToStart + pathCost + distToEnd;
+
+                    // Cập nhật đường đi ngắn nhất
+                    if (totalCost < minTotalCost) {
+                        minTotalCost = totalCost;
+                        bestPath = currentPath;
+                    }
+                }
+            }
+        }
+
+        return bestPath;
     }
 }

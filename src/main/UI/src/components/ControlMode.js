@@ -92,7 +92,7 @@ const taskStatus = selectedRobotData?.taskStatus || 0;
         onPathCalculated(responseData.calculatedPath);
       }
 
-      alert("✅ Gửi lệnh thành công!");
+      alert("Đã gửi lệnh xuống robot, đợi robot phản hồi.");
       if (onClearAll) {
         // onClearAll(); // Xóa sạch danh sách điểm ở cột bên phải
       }
@@ -366,20 +366,26 @@ const taskStatus = selectedRobotData?.taskStatus || 0;
                   backgroundColor: "#f9f9f9",
                 }}
               >
-                <div className="dest-info">
-                  <span
-                    style={{
-                      background: "#007bff",
-                      color: "white",
-                      borderRadius: "3px",
-                      padding: "1px 4px",
-                      fontSize: "10px",
-                      marginRight: "5px",
-                    }}
-                  >
-                    #{i + 1}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#333" }}>{p.name}</span>
+                <div className="dest-info" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <div>
+                    <span
+                      style={{
+                        background: "#007bff",
+                        color: "white",
+                        borderRadius: "3px",
+                        padding: "1px 4px",
+                        fontSize: "10px",
+                        marginRight: "5px",
+                      }}
+                    >
+                      #{i + 1}
+                    </span>
+                    <span style={{ fontSize: "12px", color: "#333", fontWeight: "bold" }}>{p.name}</span>
+                  </div>
+                  {/* Hiển thị thêm tọa độ X, Y */}
+                  <div style={{ fontSize: "10px", color: "#666", marginTop: "3px", paddingLeft: "25px" }}>
+                    X: {p.x != null ? p.x.toFixed(0) : 0} | Y: {p.y != null ? p.y.toFixed(0) : 0} mm
+                  </div>
                 </div>
                 <button
                   onClick={() => onRemoveDestination(i)}

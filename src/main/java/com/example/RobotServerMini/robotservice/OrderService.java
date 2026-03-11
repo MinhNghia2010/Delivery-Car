@@ -30,9 +30,11 @@ public class OrderService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Lấy danh sách đang xử lý
+    // Lấy danh sách đang xử lý (tất cả đơn chưa hoàn thành)
     public List<OrderModel> getActiveOrders() {
-        return orderRepository.findByStatus("PENDING");
+        Query query = new Query();
+        query.addCriteria(Criteria.where("status").ne("COMPLETED"));
+        return mongoTemplate.find(query, OrderModel.class);
     }
 
     // Hoàn thành đơn
